@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #000000;
+  background-image: 
+    radial-gradient(ellipse at top, rgba(118, 185, 0, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(118, 185, 0, 0.01) 0%, transparent 50%);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Very subtle NVIDIA green glow effects */
+.text-glow-nvidia {
+  text-shadow: 
+    0 0 4px rgba(118, 185, 0, 0.15),
+    0 0 8px rgba(118, 185, 0, 0.1),
+    0 0 12px rgba(118, 185, 0, 0.05);
+}
+
+/* Minimal green border glow */
+.green-border-glow {
+  box-shadow: 
+    inset 0 0 0 1px rgba(118, 185, 0, 0.1),
+    0 0 8px rgba(118, 185, 0, 0.02);
+}
+
+/* Green accent elements */
+.green-accent {
+  background: rgba(118, 185, 0, 0.03);
+  border: 1px solid rgba(118, 185, 0, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+/* NVIDIA badge styling */
+.nvidia-badge {
+  background: linear-gradient(135deg, #76b900, #5a8f00);
+  box-shadow: 0 8px 32px rgba(118, 185, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.nvidia-badge::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Grid overlay */
+.grid-overlay {
+  background-image: 
+    linear-gradient(rgba(118, 185, 0, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(118, 185, 0, 0.015) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: grid-move 10s linear infinite;
+}
+
+@keyframes grid-move {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, 30px); }
+}
+
+/* Grain overlay */
+.grain-overlay {
+  background-image: 
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(118, 185, 0, 0) 0deg, rgba(118, 185, 0, 0.02) 1deg, rgba(118, 185, 0, 0) 2deg);
+  background-size: 100px 100px;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+}
+
+/* Hyphen trail animation */
+.hyphen-trail {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: monospace;
+  font-size: 14px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hyphen-trail-1 {
+  animation: trail-1 35s ease-in-out infinite;
+}
+
+.hyphen-trail-2 {
+  animation: trail-2 42s ease-in-out infinite;
+  animation-delay: -8s;
+}
+
+.hyphen-trail-3 {
+  animation: trail-3 38s ease-in-out infinite;
+  animation-delay: -15s;
+}
+
+.hyphen-trail-4 {
+  animation: trail-4 45s ease-in-out infinite;
+  animation-delay: -22s;
+}
+
+.hyphen-trail-5 {
+  animation: trail-5 40s ease-in-out infinite;
+  animation-delay: -30s;
+}
+
+@keyframes trail-1 {
+  0% {
+    transform: translateX(-20%) translateY(10vh);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(50vw) translateY(10vh);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(120vw) translateY(30vh);
+    opacity: 0.7;
+  }
+  75% {
+    transform: translateX(80vw) translateY(90vh);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateX(-20%) translateY(90vh);
+    opacity: 0;
+  }
+}
+
+@keyframes trail-2 {
+  0% {
+    transform: translateX(120vw) translateY(80vh);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(30vw) translateY(60vh);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(-20%) translateY(40vh);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateX(20vw) translateY(10vh);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(120vw) translateY(20vh);
+    opacity: 0;
+  }
+}
+
+@keyframes trail-3 {
+  0% {
+    transform: translateX(60vw) translateY(-20%);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(80vw) translateY(30vh);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(40vw) translateY(70vh);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateX(10vw) translateY(50vh);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(40vw) translateY(-20%);
+    opacity: 0;
+  }
+}
+
+@keyframes trail-4 {
+  0% {
+    transform: translateX(10vw) translateY(120vh);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(40vw) translateY(80vh);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(90vw) translateY(40vh);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateX(70vw) translateY(10vh);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateX(20vw) translateY(-20%);
+    opacity: 0;
+  }
+}
+
+@keyframes trail-5 {
+  0% {
+    transform: translateX(-20%) translateY(50vh);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(25vw) translateY(25vh);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(75vw) translateY(75vh);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translateX(120vw) translateY(50vh);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateX(90vw) translateY(10vh);
+    opacity: 0;
+  }
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(118, 185, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(118, 185, 0, 0.5);
+}
