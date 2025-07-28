@@ -66,25 +66,34 @@ function createMockClient() {
     system_metrics: []
   }
 
-  const mockQueryBuilder = {
-    select: (columns?: string) => Promise.resolve({ data: [], error: null }),
-    insert: (data: any) => Promise.resolve({ data: [], error: null }),
-    update: (data: any) => mockQueryBuilder,
-    delete: () => mockQueryBuilder,
-    eq: (column: string, value: any) => mockQueryBuilder,
-    neq: (column: string, value: any) => mockQueryBuilder,
-    gt: (column: string, value: any) => mockQueryBuilder,
-    gte: (column: string, value: any) => mockQueryBuilder,
-    lt: (column: string, value: any) => mockQueryBuilder,
-    lte: (column: string, value: any) => mockQueryBuilder,
-    like: (column: string, value: any) => mockQueryBuilder,
-    ilike: (column: string, value: any) => mockQueryBuilder,
-    in: (column: string, value: any[]) => mockQueryBuilder,
-    order: (column: string, options?: { ascending?: boolean }) => mockQueryBuilder,
-    limit: (count: number) => mockQueryBuilder,
-    single: () => Promise.resolve({ data: null, error: null }),
-    maybeSingle: () => Promise.resolve({ data: null, error: null })
+  const createMockQueryBuilder = () => {
+    const builder: any = {
+      select: (columns?: string) => builder,
+      insert: (data: any) => builder,
+      update: (data: any) => builder,
+      delete: () => builder,
+      eq: (column: string, value: any) => builder,
+      neq: (column: string, value: any) => builder,
+      gt: (column: string, value: any) => builder,
+      gte: (column: string, value: any) => builder,
+      lt: (column: string, value: any) => builder,
+      lte: (column: string, value: any) => builder,
+      like: (column: string, value: any) => builder,
+      ilike: (column: string, value: any) => builder,
+      in: (column: string, value: any[]) => builder,
+      order: (column: string, options?: { ascending?: boolean }) => builder,
+      limit: (count: number) => builder,
+      single: () => builder,
+      maybeSingle: () => builder,
+      then: (resolve: (value: any) => void, reject?: (reason: any) => void) => {
+        resolve({ data: mockData[builder._table] || [], error: null })
+      },
+      _table: ''
+    }
+    return builder
   }
+  
+  const mockQueryBuilder = createMockQueryBuilder()
 
   const mockChannel = {
     on: (event: string, filter: any, callback?: (payload: any) => void) => mockChannel,
@@ -94,7 +103,11 @@ function createMockClient() {
   }
 
   return {
-    from: <T = any>(table: string) => mockQueryBuilder as any,
+    from: <T = any>(table: string) => {
+      const builder = createMockQueryBuilder()
+      builder._table = table
+      return builder
+    },
     channel: (name: string) => mockChannel as any,
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
