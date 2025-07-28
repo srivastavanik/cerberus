@@ -1,6 +1,8 @@
 import { BaseAgent, Message } from './base-agent'
 import { supabase } from '../supabase'
 import { optimizeCityTraffic, routeEmergencyVehicle } from '../nvidia'
+import { mapboxService } from '../mapbox'
+import { broadcastCoordinationEvent, broadcastEmergency, broadcastSystemStatus } from '../event-broadcaster'
 import type { VehicleState, SystemMetrics, Agent, FleetStatistics } from '../supabase'
 
 interface DistrictCongestion {

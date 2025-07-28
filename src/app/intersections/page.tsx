@@ -50,9 +50,10 @@ export default function Intersections() {
       const latestByIntersection: Record<string, IntersectionState> = {}
       const states = data as unknown as IntersectionState[]
       states.forEach(state => {
-        if (!latestByIntersection[state.intersection_id] || 
-            new Date(state.timestamp) > new Date(latestByIntersection[state.intersection_id].timestamp)) {
-          latestByIntersection[state.intersection_id] = state
+        const intersectionId = state.intersection_id as string
+        if (!latestByIntersection[intersectionId] || 
+            new Date(state.timestamp as string) > new Date(latestByIntersection[intersectionId].timestamp as string)) {
+          latestByIntersection[intersectionId] = state
         }
       })
       setIntersections(Object.values(latestByIntersection))
