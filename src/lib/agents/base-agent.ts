@@ -170,7 +170,7 @@ export abstract class BaseAgent {
       if (data) {
         const messages = data as unknown as CoordinationMessage[]
         messages.forEach(msg => {
-          responses.set(msg.sender as string, msg.message_type === 'acceptance')
+          responses.set(msg.sender, msg.message_type === 'acceptance')
         })
       }
 

@@ -1,9 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { supabase } from '../../lib/supabase'
 import LayoutWrapper from '../../components/layout-wrapper'
-import type { DistrictMetrics } from '../../lib/supabase'
+import type { DistrictMetrics, VehicleState } from '../../lib/supabase'
+
+// Dynamically import Mapbox to avoid SSR issues
+const MapboxMap = dynamic(() => import('../../components/mapbox-map'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-900 animate-pulse rounded-lg" />
+})
 
 const DISTRICTS = [
   'soma', 'mission', 'castro', 'richmond', 'sunset', 'marina',
@@ -14,9 +21,16 @@ const DISTRICTS = [
 export default function Districts() {
   const [districtData, setDistrictData] = useState<Record<string, DistrictMetrics>>({})
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null)
+  const [vehicleMarkers, setVehicleMarkers] = useState<Array<{
+    id: string
+    position: [number, number]
+    color?: string
+    popup?: string
+  }>>([])
 
   useEffect(() => {
     fetchDistrictData()
+    fetchVehicleData()
     
     const subscription = supabase
       .channel('district-metrics')
@@ -33,13 +47,51 @@ export default function Districts() {
       })
       .subscribe()
 
-    const interval = setInterval(fetchDistrictData, 30000)
+    // Subscribe to vehicle state changes
+    const vehicleSubscription = supabase
+      .channel('vehicle-states')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'vehicle_states'
+      }, () => {
+        fetchVehicleData()
+      })
+      .subscribe()
+
+    const interval = setInterval(() => {
+      fetchDistrictData()
+      fetchVehicleData()
+    }, 5000)
 
     return () => {
       subscription.unsubscribe()
+      vehicleSubscription.unsubscribe()
       clearInterval(interval)
     }
   }, [])
+
+  const fetchVehicleData = async () => {
+    const { data } = await supabase
+      .from('vehicle_states')
+      .select('*')
+      .gte('timestamp', new Date(Date.now() - 60000).toISOString())
+
+    if (data) {
+      const vehicles = data as unknown as VehicleState[]
+      const markers = vehicles.map(vehicle => {
+        const coordinates = vehicle.grid_position?.coordinates || [-122.4194, 37.7749]
+        return {
+          id: vehicle.vehicle_id,
+          position: [coordinates[0], coordinates[1]] as [number, number],
+          color: vehicle.company === 'waymo' ? '#4285F4' : 
+                 vehicle.company === 'zoox' ? '#00A86B' : '#FF6F00',
+          popup: `${vehicle.company.toUpperCase()} - ${vehicle.status}`
+        }
+      })
+      setVehicleMarkers(markers)
+    }
+  }
 
   const fetchDistrictData = async () => {
     const { data } = await supabase
@@ -113,6 +165,18 @@ export default function Districts() {
               </div>
             )
           })}
+        </div>
+
+        {/* Map View */}
+        <div className="mt-8 bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-nvidia/20">
+          <h2 className="text-2xl font-semibold text-nvidia mb-4">Live Vehicle Map</h2>
+          <div className="h-[500px] rounded-lg overflow-hidden">
+            <MapboxMap
+              center={[-122.4194, 37.7749]}
+              zoom={12}
+              markers={vehicleMarkers}
+            />
+          </div>
         </div>
 
         {/* Selected District Details */}

@@ -48,7 +48,7 @@ export default function Fleets() {
       const statsByCompany: Record<string, FleetStatistics[]> = {}
       const fleetStats = stats as unknown as FleetStatistics[]
       fleetStats.forEach(stat => {
-        const company = stat.company as string
+        const company = stat.company
         if (!statsByCompany[company]) {
           statsByCompany[company] = []
         }
