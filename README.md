@@ -36,8 +36,8 @@ This system implements a multi-agent architecture to coordinate autonomous vehic
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/srivastavanik/hooray.git
-cd hooray/sf-av-coordination
+git clone https://github.com/srivastavanik/cerberus.git
+cd cerberus
 ```
 
 ### 2. Install dependencies
