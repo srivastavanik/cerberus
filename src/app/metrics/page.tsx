@@ -42,6 +42,7 @@ export default function Metrics() {
       .gte('timestamp', since)
       .order('timestamp', { ascending: false })
       .limit(100)
+      .returns<SystemMetrics[]>()
 
     if (sysData) setSystemMetrics(sysData)
 
@@ -52,6 +53,7 @@ export default function Metrics() {
       .gte('timestamp', since)
       .order('timestamp', { ascending: false })
       .limit(200)
+      .returns<DistrictMetrics[]>()
 
     if (distData) setDistrictMetrics(distData)
 
@@ -62,6 +64,7 @@ export default function Metrics() {
       .gte('timestamp', since)
       .order('timestamp', { ascending: false })
       .limit(200)
+      .returns<FleetStatistics[]>()
 
     if (fleetData) setFleetMetrics(fleetData)
   }
@@ -166,10 +169,10 @@ export default function Metrics() {
           <h2 className="text-2xl font-semibold text-white mb-4">District Performance</h2>
           
           <div className="space-y-3">
-            {Array.from(new Set(districtMetrics.map(d => d.district))).slice(0, 6).map(district => {
-              const districtData = districtMetrics.filter(d => d.district === district)
+            {Array.from(new Set(districtMetrics.map(d => d.district_name))).slice(0, 6).map(district => {
+              const districtData = districtMetrics.filter(d => d.district_name === district)
               const avgCongestion = getAverageMetric(districtData, 'congestion_level')
-              const avgWaitTime = getAverageMetric(districtData, 'average_wait_time')
+              const avgSpeed = getAverageMetric(districtData, 'average_speed')
               
               return (
                 <div key={district} className="flex items-center justify-between py-2 border-b border-nvidia/10">
@@ -178,10 +181,10 @@ export default function Metrics() {
                   </span>
                   <div className="flex items-center space-x-6">
                     <span className="text-sm text-gray-400">
-                      Congestion: <span className="text-white">{(avgCongestion * 100).toFixed(0)}%</span>
+                      Congestion: <span className="text-white">{avgCongestion.toFixed(0)}/10</span>
                     </span>
                     <span className="text-sm text-gray-400">
-                      Wait: <span className="text-white">{avgWaitTime.toFixed(0)}s</span>
+                      Speed: <span className="text-white">{avgSpeed.toFixed(0)} mph</span>
                     </span>
                   </div>
                 </div>

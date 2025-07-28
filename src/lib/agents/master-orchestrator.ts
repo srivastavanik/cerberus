@@ -1,7 +1,7 @@
 import { BaseAgent, Message } from './base-agent'
 import { supabase } from '../supabase'
 import { optimizeCityTraffic, routeEmergencyVehicle } from '../nvidia'
-import type { VehicleState, SystemMetrics } from '../supabase'
+import type { VehicleState, SystemMetrics, Agent, FleetStatistics } from '../supabase'
 
 interface DistrictCongestion {
   districtId: string
@@ -57,8 +57,8 @@ export class MasterOrchestratorAgent extends BaseAgent {
   async start() {
     await super.start()
     
-    // Initialize district and fleet agents
-    this.initializeAgents()
+    // Initialize district and fleet agents from database
+    await this.initializeAgents()
     
     // Start monitoring
     this.startCityMonitoring()
@@ -71,29 +71,27 @@ export class MasterOrchestratorAgent extends BaseAgent {
     await super.stop()
   }
 
-  private initializeAgents() {
-    // District agents for SF's main areas
-    this.districtAgents = [
-      'district-financial',
-      'district-soma',
-      'district-mission',
-      'district-castro',
-      'district-haight',
-      'district-richmond',
-      'district-sunset',
-      'district-marina',
-      'district-northbeach',
-      'district-chinatown',
-      'district-tenderloin',
-      'district-nobhill'
-    ]
+  private async initializeAgents() {
+    // Load agents from database
+    const { data: agents } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('status', 'active')
+      .returns<Agent[]>()
 
-    // Fleet coordinator agents
-    this.fleetAgents = [
-      'fleet-waymo',
-      'fleet-zoox',
-      'fleet-cruise'
-    ]
+    if (agents) {
+      // Filter district agents
+      this.districtAgents = agents
+        .filter(a => a.agent_type === 'district_coordinator')
+        .map(a => a.agent_id)
+
+      // Filter fleet agents
+      this.fleetAgents = agents
+        .filter(a => a.agent_type === 'fleet_coordinator')
+        .map(a => a.agent_id)
+      
+      console.log(`Initialized ${this.districtAgents.length} district agents and ${this.fleetAgents.length} fleet agents from database`)
+    }
   }
 
   private startCityMonitoring() {
@@ -130,8 +128,16 @@ export class MasterOrchestratorAgent extends BaseAgent {
         .gte('timestamp', new Date(Date.now() - 60000).toISOString())
 
       const vehicleCount = vehicles?.length || 0
-      const avgWaitTime = vehicles?.reduce((acc, v) => 
-        acc + (v.anonymized_data.wait_time || 0), 0) / (vehicleCount || 1)
+      const avgWaitTime = vehicleCount > 0 && vehicles
+        ? vehicles.reduce((acc, v) => {
+            const waitTime = v.anonymized_data && 
+              typeof v.anonymized_data === 'object' && 
+              'wait_time' in v.anonymized_data 
+              ? Number(v.anonymized_data.wait_time) 
+              : 0
+            return acc + waitTime
+          }, 0) / vehicleCount
+        : 0
 
       districts.push({
         districtId,
@@ -182,6 +188,16 @@ export class MasterOrchestratorAgent extends BaseAgent {
     // Process district status reports
     const report = message.payload
     console.log(`District report from ${message.sender}:`, report)
+    
+    // Update district metrics in database
+    await supabase.from('district_metrics').insert({
+      district_name: message.sender.replace('district-', ''),
+      vehicle_density: report.vehicle_count || 0,
+      congestion_level: report.congestion_level || 0,
+      average_speed: report.average_speed || 25,
+      active_intersections: report.active_intersections || 0,
+      coordination_score: report.coordination_score || 100
+    })
   }
 
   private async handleEmergencyAlert(message: Message) {
@@ -252,6 +268,7 @@ export class MasterOrchestratorAgent extends BaseAgent {
       .from('vehicle_states')
       .select('*')
       .gte('timestamp', new Date(Date.now() - 120000).toISOString())
+      .returns<VehicleState[]>()
 
     const { data: intersections } = await supabase
       .from('intersection_states')
@@ -310,6 +327,7 @@ export class MasterOrchestratorAgent extends BaseAgent {
       .from('fleet_statistics')
       .select('*')
       .gte('timestamp', new Date(Date.now() - 300000).toISOString())
+      .returns<FleetStatistics[]>()
 
     if (!fleetStats || fleetStats.length === 0) return 1.0
 

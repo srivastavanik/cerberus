@@ -4,6 +4,7 @@ import { createFleetCoordinators } from '@/lib/agents/fleet-coordinator'
 import { MasterOrchestratorAgent } from '@/lib/agents/master-orchestrator'
 import { createMajorIntersections } from '@/lib/agents/intersection-agent'
 import { createDistrictAgents } from '@/lib/agents/district-agent'
+import type { DistrictMetrics } from '@/lib/supabase'
 
 // Global simulation state
 let simulationRunning = false
@@ -201,6 +202,7 @@ async function applyScenario(scenario: string) {
       const { data: rushDistricts } = await supabase
         .from('district_metrics')
         .select('*')
+        .returns<DistrictMetrics[]>()
       
       if (rushDistricts) {
         for (const district of rushDistricts) {
@@ -230,6 +232,7 @@ async function applyScenario(scenario: string) {
       const { data: districts } = await supabase
         .from('district_metrics')
         .select('*')
+        .returns<DistrictMetrics[]>()
       
       if (districts) {
         for (const district of districts) {
@@ -352,7 +355,7 @@ async function updateSimulationMetrics() {
     const totalVehicles = vehicles?.length || 0
     const activeVehicles = vehicles?.filter(v => v.status !== 'idle').length || 0
     const avgSuccessRate = events?.length 
-      ? events.reduce((sum, e) => sum + e.success_rate, 0) / events.length
+      ? events.reduce((sum, e) => sum + (e.success_rate as number || 0), 0) / events.length
       : 95
 
     await supabase

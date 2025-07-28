@@ -168,7 +168,8 @@ export abstract class BaseAgent {
         .eq('payload->proposalId', proposalId)
 
       if (data) {
-        data.forEach(msg => {
+        const messages = data as unknown as CoordinationMessage[]
+        messages.forEach(msg => {
           responses.set(msg.sender, msg.message_type === 'acceptance')
         })
       }

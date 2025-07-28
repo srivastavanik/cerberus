@@ -46,7 +46,8 @@ export default function Fleets() {
 
     if (stats) {
       const statsByCompany: Record<string, FleetStatistics[]> = {}
-      stats.forEach(stat => {
+      const fleetStats = stats as unknown as FleetStatistics[]
+      fleetStats.forEach(stat => {
         if (!statsByCompany[stat.company]) {
           statsByCompany[stat.company] = []
         }
@@ -63,7 +64,8 @@ export default function Fleets() {
 
     if (vehicles) {
       const counts: Record<string, number> = {}
-      vehicles.forEach(v => {
+      const vehicleStates = vehicles as unknown as VehicleState[]
+      vehicleStates.forEach(v => {
         counts[v.company] = (counts[v.company] || 0) + 1
       })
       setVehiclesByFleet(counts)

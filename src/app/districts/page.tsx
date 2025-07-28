@@ -28,7 +28,7 @@ export default function Districts() {
         const newMetrics = payload.new as DistrictMetrics
         setDistrictData(prev => ({
           ...prev,
-          [newMetrics.district]: newMetrics
+          [newMetrics.district_name]: newMetrics
         }))
       })
       .subscribe()
@@ -50,10 +50,11 @@ export default function Districts() {
 
     if (data) {
       const latestByDistrict: Record<string, DistrictMetrics> = {}
-      data.forEach(metric => {
-        if (!latestByDistrict[metric.district] || 
-            new Date(metric.timestamp) > new Date(latestByDistrict[metric.district].timestamp)) {
-          latestByDistrict[metric.district] = metric
+      const metrics = data as unknown as DistrictMetrics[]
+      metrics.forEach((metric) => {
+        if (!latestByDistrict[metric.district_name] || 
+            new Date(metric.timestamp) > new Date(latestByDistrict[metric.district_name].timestamp)) {
+          latestByDistrict[metric.district_name] = metric
         }
       })
       setDistrictData(latestByDistrict)
@@ -92,8 +93,8 @@ export default function Districts() {
                 {data ? (
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">Vehicles</span>
-                      <span className="text-sm font-medium text-white">{data.vehicle_count}</span>
+                      <span className="text-sm text-gray-400">Vehicle Density</span>
+                      <span className="text-sm font-medium text-white">{data.vehicle_density}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-400">Congestion</span>
@@ -102,8 +103,8 @@ export default function Districts() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">Wait Time</span>
-                      <span className="text-sm font-medium text-white">{data.average_wait_time}s</span>
+                      <span className="text-sm text-gray-400">Avg Speed</span>
+                      <span className="text-sm font-medium text-white">{data.average_speed.toFixed(1)} mph</span>
                     </div>
                   </div>
                 ) : (
@@ -126,8 +127,8 @@ export default function Districts() {
                 <h3 className="text-lg font-medium text-white mb-3">Traffic Metrics</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Active Vehicles</span>
-                    <span className="text-white">{districtData[selectedDistrict].vehicle_count}</span>
+                    <span className="text-gray-400">Vehicle Density</span>
+                    <span className="text-white">{districtData[selectedDistrict].vehicle_density}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Congestion Level</span>
@@ -136,8 +137,8 @@ export default function Districts() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Average Wait Time</span>
-                    <span className="text-white">{districtData[selectedDistrict].average_wait_time} seconds</span>
+                    <span className="text-gray-400">Average Speed</span>
+                    <span className="text-white">{districtData[selectedDistrict].average_speed.toFixed(1)} mph</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Coordination Score</span>
@@ -152,9 +153,9 @@ export default function Districts() {
                 <h3 className="text-lg font-medium text-white mb-3">System Performance</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Active Negotiations</span>
+                    <span className="text-gray-400">Active Intersections</span>
                     <span className="text-white">
-                      {districtData[selectedDistrict].active_negotiations || 0}
+                      {districtData[selectedDistrict].active_intersections || 0}
                     </span>
                   </div>
                   <div className="flex justify-between">

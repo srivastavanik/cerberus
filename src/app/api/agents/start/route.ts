@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MasterOrchestratorAgent } from '../../../../lib/agents/master-orchestrator'
-import { IntersectionAgent } from '../../../../lib/agents/intersection-agent'
-import { DistrictAgent } from '../../../../lib/agents/district-agent'
-import { FleetCoordinatorAgent, createFleetCoordinators } from '../../../../lib/agents/fleet-coordinator'
+import { MasterOrchestratorAgent } from '@/lib/agents/master-orchestrator'
+import { IntersectionAgent } from '@/lib/agents/intersection-agent'
+import { DistrictAgent } from '@/lib/agents/district-agent'
+import { FleetCoordinatorAgent, createFleetCoordinators } from '@/lib/agents/fleet-coordinator'
 
 // Global agent instances
 let orchestrator: MasterOrchestratorAgent | null = null

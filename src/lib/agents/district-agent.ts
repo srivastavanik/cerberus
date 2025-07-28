@@ -191,10 +191,11 @@ export class DistrictAgent extends BaseAgent {
     this.updateCongestionLevel()
 
     // Calculate metrics
+    const vehicleStates = (vehicles || []) as unknown as VehicleState[]
     const metrics = {
-      avgSpeed: this.calculateAverageSpeed(vehicles || []),
-      stoppedVehicles: (vehicles || []).filter(v => v.status === 'idle').length,
-      chargingVehicles: (vehicles || []).filter(v => v.status === 'charging').length
+      avgSpeed: this.calculateAverageSpeed(vehicleStates),
+      stoppedVehicles: vehicleStates.filter(v => v.status === 'idle').length,
+      chargingVehicles: vehicleStates.filter(v => v.status === 'charging').length
     }
 
     // Check for anomalies
@@ -248,9 +249,10 @@ export class DistrictAgent extends BaseAgent {
       .gte('timestamp', new Date(Date.now() - 2000).toISOString())
 
     messages?.forEach(msg => {
+      const payload = msg.payload as { districtId: string; congestion: number }
       responses.push({
-        districtId: msg.payload.districtId,
-        congestion: msg.payload.congestion
+        districtId: payload.districtId,
+        congestion: payload.congestion
       })
     })
 

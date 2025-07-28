@@ -262,15 +262,16 @@ export class FleetCoordinatorAgent extends BaseAgent {
 
     // Update internal state
     this.activeVehicles.clear()
-    vehicles?.forEach(v => {
+    const vehicleStates = (vehicles || []) as unknown as VehicleState[]
+    vehicleStates.forEach(v => {
       this.activeVehicles.set(v.vehicle_id, {
         id: v.vehicle_id,
         status: v.status,
         batteryLevel: v.battery_level || 100,
         passengerCount: v.passenger_count || 0,
         gridPosition: v.grid_position.coordinates as [number, number],
-        currentDistrict: v.anonymized_data.district || 'unknown',
-        waitTime: v.anonymized_data.wait_time || 0
+        currentDistrict: (v.anonymized_data as any)?.district || 'unknown',
+        waitTime: (v.anonymized_data as any)?.wait_time || 0
       })
     })
 

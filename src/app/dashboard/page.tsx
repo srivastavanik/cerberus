@@ -44,7 +44,7 @@ export default function Dashboard() {
       .single()
 
     if (metricsData) {
-      setMetrics(metricsData)
+      setMetrics(metricsData as unknown as SystemMetrics)
     }
 
     // Get vehicle count
@@ -61,8 +61,9 @@ export default function Dashboard() {
       .select('*')
       .gte('timestamp', new Date(Date.now() - 60000).toISOString())
 
-    const active = intersections?.filter(i => 
-      i.active_negotiations && i.active_negotiations.length > 0
+    const typedIntersections = intersections as IntersectionState[] | null
+    const active = typedIntersections?.filter(i => 
+      i.active_negotiations && Array.isArray(i.active_negotiations) && i.active_negotiations.length > 0
     ).length || 0
     setActiveIntersections(active)
 
