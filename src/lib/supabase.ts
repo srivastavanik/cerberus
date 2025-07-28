@@ -1,8 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+// Check if environment variables are properly configured
+const isConfigured = supabaseUrl && 
+                    supabaseAnonKey && 
+                    supabaseUrl !== 'your_supabase_url_here' &&
+                    supabaseAnonKey !== 'your_supabase_anon_key_here'
+
+// Warning message for development
+if (!isConfigured && typeof window !== 'undefined') {
+  console.warn(
+    '⚠️ Supabase environment variables are not configured properly.',
+    '\nPlease update your .env.local file with actual Supabase credentials.',
+    '\nVisit https://supabase.com to create a free project.'
+  )
+}
 
 // Singleton instances to prevent multiple client warnings
 let supabaseInstance: ReturnType<typeof createClient> | null = null
@@ -10,25 +25,90 @@ let supabaseAdminInstance: ReturnType<typeof createClient> | null = null
 
 // Use service role key for server-side operations to bypass RLS
 export const supabase = (() => {
-  if (!supabaseInstance) {
-    supabaseInstance = typeof window === 'undefined' && supabaseServiceKey
-      ? createClient(supabaseUrl, supabaseServiceKey, {
-          auth: { persistSession: false }
-        })
-      : createClient(supabaseUrl, supabaseAnonKey)
+  if (!supabaseInstance && isConfigured) {
+    try {
+      supabaseInstance = typeof window === 'undefined' && supabaseServiceKey && supabaseServiceKey !== 'your_supabase_service_key_here'
+        ? createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { persistSession: false }
+          })
+        : createClient(supabaseUrl, supabaseAnonKey)
+    } catch (error) {
+      console.error('Failed to create Supabase client:', error)
+    }
   }
-  return supabaseInstance
+  // Return a mock client if not configured to prevent crashes
+  return supabaseInstance || createMockClient()
 })()
 
 // Create a service role client for API routes
 export const supabaseAdmin = (() => {
-  if (!supabaseAdminInstance && supabaseServiceKey) {
-    supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
+  if (!supabaseAdminInstance && supabaseServiceKey && isConfigured && supabaseServiceKey !== 'your_supabase_service_key_here') {
+    try {
+      supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false }
+      })
+    } catch (error) {
+      console.error('Failed to create Supabase admin client:', error)
+    }
+  }
+  return supabaseAdminInstance || createMockClient()
+})()
+
+// Mock client for development when Supabase is not configured
+function createMockClient() {
+  const mockData: Record<string, any[]> = {
+    agents: [],
+    vehicle_states: [],
+    district_metrics: [],
+    intersection_states: [],
+    fleet_statistics: [],
+    coordination_messages: [],
+    system_metrics: []
+  }
+
+  const mockQueryBuilder = {
+    select: (columns?: string) => Promise.resolve({ data: [], error: null }),
+    insert: (data: any) => Promise.resolve({ data: [], error: null }),
+    update: (data: any) => mockQueryBuilder,
+    delete: () => mockQueryBuilder,
+    eq: (column: string, value: any) => mockQueryBuilder,
+    neq: (column: string, value: any) => mockQueryBuilder,
+    gt: (column: string, value: any) => mockQueryBuilder,
+    gte: (column: string, value: any) => mockQueryBuilder,
+    lt: (column: string, value: any) => mockQueryBuilder,
+    lte: (column: string, value: any) => mockQueryBuilder,
+    like: (column: string, value: any) => mockQueryBuilder,
+    ilike: (column: string, value: any) => mockQueryBuilder,
+    in: (column: string, value: any[]) => mockQueryBuilder,
+    order: (column: string, options?: { ascending?: boolean }) => mockQueryBuilder,
+    limit: (count: number) => mockQueryBuilder,
+    single: () => Promise.resolve({ data: null, error: null }),
+    maybeSingle: () => Promise.resolve({ data: null, error: null })
+  }
+
+  const mockChannel = {
+    on: (event: string, filter: any, callback?: (payload: any) => void) => mockChannel,
+    subscribe: (callback?: (status: string) => void) => ({ 
+      unsubscribe: () => Promise.resolve() 
     })
   }
-  return supabaseAdminInstance
-})()
+
+  return {
+    from: <T = any>(table: string) => mockQueryBuilder as any,
+    channel: (name: string) => mockChannel as any,
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signIn: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signOut: () => Promise.resolve({ error: null })
+    },
+    storage: {
+      from: (bucket: string) => ({
+        upload: () => Promise.resolve({ data: null, error: null }),
+        download: () => Promise.resolve({ data: null, error: null })
+      })
+    }
+  } as any
+}
 
 // Types for our database tables
 export interface Agent {
