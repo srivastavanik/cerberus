@@ -1,79 +1,121 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { mockSupabase } from '../../lib/mock-data'
 import LayoutWrapper from '../../components/layout-wrapper'
-import type { SystemMetrics, VehicleState, IntersectionState } from '../../lib/supabase'
+import MapboxMap from '../../components/mapbox-map'
+import type { MockSystemMetrics, MockVehicleState, MockIntersectionState } from '../../lib/mock-data'
 
 export default function Dashboard() {
-  const [metrics, setMetrics] = useState<SystemMetrics | null>(null)
+  const [metrics, setMetrics] = useState<MockSystemMetrics | null>(null)
   const [vehicleCount, setVehicleCount] = useState(0)
   const [activeIntersections, setActiveIntersections] = useState(0)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [vehicles, setVehicles] = useState<any[]>([])
+  const [intersections, setIntersections] = useState<any[]>([])
 
   useEffect(() => {
     fetchData()
     
-    const metricsSubscription = supabase
-      .channel('dashboard-metrics')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'system_metrics'
-      }, (payload) => {
-        const newMetrics = payload.new as SystemMetrics
-        setMetrics(newMetrics)
-      })
-      .subscribe()
-
-    const interval = setInterval(fetchData, 30000)
+    // Update data every 3 seconds for real-time feel with mock data
+    const interval = setInterval(fetchData, 3000)
 
     return () => {
-      metricsSubscription.unsubscribe()
       clearInterval(interval)
     }
   }, [])
 
   const fetchData = async () => {
-    // Fetch latest metrics
-    const { data: metricsData } = await supabase
-      .from('system_metrics')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single()
+    try {
+      // Fetch latest metrics
+      const { data: metricsData } = await mockSupabase
+        .from('system_metrics')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single()
 
-    if (metricsData) {
-      setMetrics(metricsData)
+      if (metricsData) {
+        setMetrics(metricsData)
+      }
+
+      // Get vehicle count
+      const { count } = await mockSupabase
+        .from('vehicle_states')
+        .select('*', { count: 'exact', head: true })
+        .gte('timestamp', new Date(Date.now() - 120000).toISOString())
+
+      setVehicleCount(count || 0)
+
+      // Get active intersections
+      const { data: intersectionData } = await mockSupabase
+        .from('intersection_states')
+        .select('*')
+        .gte('timestamp', new Date(Date.now() - 60000).toISOString())
+
+      const active = intersectionData?.filter((i: any) => 
+        i.active_negotiations && i.active_negotiations.length > 0
+      ).length || 0
+      setActiveIntersections(active)
+
+      // Get recent coordination events
+      const { data: events } = await mockSupabase
+        .from('coordination_events')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(10)
+
+      setRecentActivity(events || [])
+
+      // Fetch vehicles for map
+      const { data: vehicleData } = await mockSupabase
+        .from('vehicle_states')
+        .select('*')
+        .gte('timestamp', new Date(Date.now() - 300000).toISOString()) // Last 5 minutes
+        .order('timestamp', { ascending: false })
+
+      // Group by vehicle_id and get latest position for each
+      const latestVehicles = vehicleData?.reduce((acc: any[], vehicle: any) => {
+        const existing = acc.find(v => v.vehicle_id === vehicle.vehicle_id)
+        if (!existing) {
+          acc.push({
+            id: vehicle.vehicle_id,
+            lat: vehicle.latitude,
+            lng: vehicle.longitude,
+            status: vehicle.status,
+            fleet: vehicle.fleet || vehicle.company || 'unknown'
+          })
+        }
+        return acc
+      }, []) || []
+
+      setVehicles(latestVehicles)
+
+      // Fetch intersections for map
+      const { data: intersections } = await mockSupabase
+        .from('intersection_states')
+        .select('*')
+        .gte('timestamp', new Date(Date.now() - 300000).toISOString()) // Last 5 minutes
+        .order('timestamp', { ascending: false })
+
+      // Group by intersection_id and get latest state for each
+      const latestIntersections = intersections?.reduce((acc: any[], intersection: any) => {
+        const existing = acc.find(i => i.intersection_id === intersection.intersection_id)
+        if (!existing) {
+          acc.push({
+            id: intersection.intersection_id,
+            lat: intersection.latitude,
+            lng: intersection.longitude,
+            active_negotiations: intersection.active_negotiations
+          })
+        }
+        return acc
+      }, []) || []
+
+      setIntersections(latestIntersections)
+    } catch (error) {
+      console.error('Error fetching data:', error)
     }
-
-    // Get vehicle count
-    const { count } = await supabase
-      .from('vehicle_states')
-      .select('*', { count: 'exact', head: true })
-      .gte('timestamp', new Date(Date.now() - 120000).toISOString())
-
-    setVehicleCount(count || 0)
-
-    // Get active intersections
-    const { data: intersections } = await supabase
-      .from('intersection_states')
-      .select('*')
-      .gte('timestamp', new Date(Date.now() - 60000).toISOString())
-
-    const active = intersections?.filter(i => 
-      i.active_negotiations && i.active_negotiations.length > 0
-    ).length || 0
-    setActiveIntersections(active)
-
-    // Get recent coordination events
-    const { data: events } = await supabase
-      .from('coordination_events')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(10)
-
-    setRecentActivity(events || [])
   }
 
   return (
@@ -81,6 +123,36 @@ export default function Dashboard() {
       <div className="container mx-auto px-6 py-8">
         <h1 className="text-4xl font-bold text-nvidia mb-8">System Dashboard</h1>
         
+        {/* Live Map */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-nvidia/20 green-border-glow mb-8">
+          <h2 className="text-2xl font-semibold text-white mb-4">Live System Overview</h2>
+          <div className="h-96 rounded-lg overflow-hidden">
+            <MapboxMap vehicles={vehicles} intersections={intersections} />
+          </div>
+          <div className="flex justify-center mt-4 space-x-6 text-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-gray-300">Waymo</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-gray-300">Cruise</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-teal-400"></div>
+              <span className="text-gray-300">Zoox</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+              <span className="text-gray-300">Active Intersections</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-teal-400"></div>
+              <span className="text-gray-300">Clear Intersections</span>
+            </div>
+          </div>
+        </div>
+
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <div className="bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-nvidia/20 green-border-glow">

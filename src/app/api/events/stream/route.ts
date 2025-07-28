@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Utility function to send specific event types
-export function broadcastCoordinationEvent(event: any) {
+function broadcastCoordinationEvent(event: any) {
   const encoder = new TextEncoder()
   const message = encoder.encode(`data: ${JSON.stringify({
     type: 'coordination_event',
@@ -157,7 +157,7 @@ export function broadcastCoordinationEvent(event: any) {
   })
 }
 
-export function broadcastEmergency(location: [number, number], details: any) {
+function broadcastEmergency(location: [number, number], details: any) {
   const encoder = new TextEncoder()
   const message = encoder.encode(`data: ${JSON.stringify({
     type: 'emergency',
@@ -176,7 +176,7 @@ export function broadcastEmergency(location: [number, number], details: any) {
   })
 }
 
-export function broadcastSystemStatus(status: any) {
+function broadcastSystemStatus(status: any) {
   const encoder = new TextEncoder()
   const message = encoder.encode(`data: ${JSON.stringify({
     type: 'system_status',
