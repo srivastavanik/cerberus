@@ -85,6 +85,9 @@ function createMockClient() {
       limit: (count: number) => builder,
       single: () => builder,
       maybeSingle: () => builder,
+      returns: (value?: any) => builder,
+      range: (from: number, to: number) => builder,
+      throwOnError: () => builder,
       then: (resolve: (value: any) => void, reject?: (reason: any) => void) => {
         resolve({ data: mockData[builder._table] || [], error: null })
       },
